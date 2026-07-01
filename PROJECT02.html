@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Habit Garden</title>
+<style>
+  :root{
+    --soil:#2e2a1f;
+    --moss:#5c7457;
+    --moss-light:#8aa57f;
+    --bloom:#d98a4f;
+    --paper:#faf6ec;
+    --paper-2:#f0ead8;
+    --ink:#26241c;
+    --muted:#8c8568;
+    --line:#e2dabf;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Avenir Next','Segoe UI',sans-serif;
+    min-height:100vh;
+  }
+  .shell{max-width:1040px;margin:0 auto;padding:40px 24px 100px;}
+
+  header{
+    display:flex;justify-content:space-between;align-items:flex-start;
+    margin-bottom:8px;flex-wrap:wrap;gap:16px;
+  }
+  .brand{display:flex;align-items:center;gap:12px;}
+  .brand .mark{
+    width:38px;height:38px;border-radius:50%;
+    background:conic-gradient(from 200deg, var(--moss), var(--moss-light), var(--bloom), var(--moss));
+  }
+  .brand h1{font-size:1.3rem;margin:0;font-weight:700;letter-spacing:-0.3px;}
+  .brand .sub{font-size:0.78rem;color:var(--muted);margin-top:2px;}
+  .summary{
+    display:flex;gap:20px;
+    font-size:0.78rem;color:var(--muted);
+  }
+  .summary b{display:block;font-size:1.3rem;color:var(--ink);font-weight:700;}
+
+  .add-row{
+    display:flex;gap:10px;margin:32px 0 28px;
+    border-bottom:2px solid var(--ink);
+    padding-bottom:24px;
+    flex-wrap:wrap;
+  }
+  .add-row input[type=text]{
+    flex:1;min-width:200px;
+    padding:14px 16px;
+    border:1px solid var(--line);
+    border-radius:10px;
+    background:var(--paper-2);
+    font-size:0.95rem;
+    font-family:inherit;
+    color:var(--ink);
+  }
+  .add-row input:focus{outline:2px solid var(--moss);outline-offset:1px;}
+  select#freq{
+    padding:14px 12px;border:1px solid var(--line);border-radius:10px;background:var(--paper-2);font-family:inherit;font-size:0.85rem;color:var(--ink);
+  }
+  .add-row button{
+    padding:14px 22px;border:none;border-radius:10px;
+    background:var(--moss);color:#fff;font-weight:600;font-size:0.9rem;
+    cursor:pointer;transition:background .15s ease;
+  }
+  .add-row button:hover{background:#4d6149;}
+
+  .empty{
+    text-align:center;padding:60px 20px;color:var(--muted);
+  }
+  .empty .glyph{font-size:2.2rem;margin-bottom:10px;}
+
+  .grid{display:flex;flex-direction:column;gap:14px;}
+
+  .habit{
+    background:var(--paper-2);
+    border-radius:14px;
+    padding:20px 22px;
+    display:grid;
+    grid-template-columns:auto 1fr auto;
+    align-items:center;
+    gap:18px;
+  }
+  @media(max-width:640px){.habit{grid-template-columns:1fr;}}
+
+  .plant{
+    width:54px;height:54px;
+    display:flex;align-items:center;justify-content:center;
+    font-size:1.6rem;
+    border-radius:50%;
+    background:var(--paper);
+    border:1px solid var(--line);
+  }
+
+  .habit-info .name{font-weight:600;font-size:1rem;margin-bottom:4px;}
+  .habit-info .meta{font-size:0.76rem;color:var(--muted);display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+  .streak-pill{
+    background:var(--bloom);color:#fff;font-weight:700;
+    padding:2px 9px;border-radius:999px;font-size:0.72rem;
+  }
+  .week{display:flex;gap:5px;margin-top:8px;}
+  .day{
+    width:22px;height:22px;border-radius:6px;
+    background:var(--line);
+    display:flex;align-items:center;justify-content:center;
+    font-size:0.6rem;color:var(--muted);
+    cursor:pointer;
+    transition:background .15s ease, transform .1s ease;
+  }
+  .day.done{background:var(--moss);color:#fff;}
+  .day.today{box-shadow:0 0 0 2px var(--bloom);}
+  .day:hover{transform:scale(1.1);}
+
+  .habit-actions{display:flex;gap:8px;align-items:center;}
+  .check-btn{
+    width:44px;height:44px;border-radius:50%;
+    border:2px solid var(--moss);
+    background:transparent;cursor:pointer;
+    font-size:1.1rem;color:var(--moss);
+    transition:all .15s ease;
+  }
+  .check-btn.checked{background:var(--moss);color:#fff;}
+  .delete-btn{
+    background:none;border:none;color:var(--muted);cursor:pointer;font-size:0.75rem;
+    text-decoration:underline;
+  }
+  .delete-btn:hover{color:#b54a2a;}
+
+  footer{margin-top:50px;font-size:0.74rem;color:var(--muted);text-align:center;}
+</style>
+</head>
+<body>
+<div class="shell">
+  <header>
+    <div class="brand">
+      <div class="mark"></div>
+      <div>
+        <h1>Habit Garden</h1>
+        <div class="sub">Tend a small plot of daily habits</div>
+      </div>
+    </div>
+    <div class="summary">
+      <div><b id="statActive">0</b>growing</div>
+      <div><b id="statStreak">0</b>best streak</div>
+      <div><b id="statToday">0</b>done today</div>
+    </div>
+  </header>
+
+  <div class="add-row">
+    <input type="text" id="habitName" placeholder="Plant a new habit — e.g. Read 10 pages">
+    <select id="freq">
+      <option value="daily">Daily</option>
+      <option value="weekdays">Weekdays</option>
+    </select>
+    <button id="addBtn">Plant</button>
+  </div>
+
+  <div id="emptyState" class="empty" style="display:none;">
+    <div class="glyph">🌱</div>
+    <div>Nothing planted yet. Add your first habit above.</div>
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+  <footer>Habit Garden — your data is saved locally in this browser, nowhere else.</footer>
+</div>
+
+<script>
+const STORE_KEY = 'habit-garden-v1';
+const PLANT_STAGES = ['🌱','🌿','🌾','🌻','🌳'];
+
+function load(){
+  try{
+    return JSON.parse(localStorage.getItem(STORE_KEY)) || [];
+  }catch(e){ return []; }
+}
+function save(habits){
+  localStorage.setItem(STORE_KEY, JSON.stringify(habits));
+}
+
+let habits = load();
+
+function todayStr(){
+  return new Date().toISOString().slice(0,10);
+}
+function dateStr(offset){
+  const d = new Date();
+  d.setDate(d.getDate()+offset);
+  return d.toISOString().slice(0,10);
+}
+function dayLabel(offset){
+  const d = new Date();
+  d.setDate(d.getDate()+offset);
+  return d.toLocaleDateString('en-US', {weekday:'short'}).slice(0,1);
+}
+
+function currentStreak(habit){
+  let streak = 0;
+  let offset = 0;
+  // if today not done yet, start counting from yesterday but today still shows separately
+  let checkDates = habit.completed;
+  let cursor = new Date();
+  while(true){
+    const ds = cursor.toISOString().slice(0,10);
+    if(checkDates.includes(ds)){
+      streak++;
+      cursor.setDate(cursor.getDate()-1);
+    } else {
+      break;
+    }
+  }
+  return streak;
+}
+
+function plantEmoji(streak){
+  if(streak >= 21) return PLANT_STAGES[4];
+  if(streak >= 14) return PLANT_STAGES[3];
+  if(streak >= 7) return PLANT_STAGES[2];
+  if(streak >= 2) return PLANT_STAGES[1];
+  return PLANT_STAGES[0];
+}
+
+function render(){
+  const grid = document.getElementById('grid');
+  const empty = document.getElementById('emptyState');
+  grid.innerHTML = '';
+
+  if(habits.length === 0){
+    empty.style.display = 'block';
+  } else {
+    empty.style.display = 'none';
+  }
+
+  let bestStreak = 0;
+  let doneToday = 0;
+  const today = todayStr();
+
+  habits.forEach((habit, idx) => {
+    const streak = currentStreak(habit);
+    bestStreak = Math.max(bestStreak, streak);
+    const isDoneToday = habit.completed.includes(today);
+    if(isDoneToday) doneToday++;
+
+    const card = document.createElement('div');
+    card.className = 'habit';
+
+    const week = document.createElement('div');
+    week.className = 'week';
+    for(let i=-6;i<=0;i++){
+      const ds = dateStr(i);
+      const dayEl = document.createElement('div');
+      dayEl.className = 'day' + (habit.completed.includes(ds) ? ' done' : '') + (i===0 ? ' today' : '');
+      dayEl.textContent = dayLabel(i);
+      dayEl.title = ds;
+      dayEl.onclick = () => toggleDate(idx, ds);
+      week.appendChild(dayEl);
+    }
+
+    card.innerHTML = `
+      <div class="plant">${plantEmoji(streak)}</div>
+      <div class="habit-info">
+        <div class="name">${escapeHtml(habit.name)}</div>
+        <div class="meta">
+          <span class="streak-pill">${streak} day${streak===1?'':'s'} streak</span>
+          <span>${habit.freq === 'weekdays' ? 'Weekdays' : 'Daily'}</span>
+        </div>
+      </div>
+    `;
+    const infoDiv = card.querySelector('.habit-info');
+    infoDiv.appendChild(week);
+
+    const actions = document.createElement('div');
+    actions.className = 'habit-actions';
+    const checkBtn = document.createElement('button');
+    checkBtn.className = 'check-btn' + (isDoneToday ? ' checked' : '');
+    checkBtn.textContent = isDoneToday ? '✓' : '';
+    checkBtn.onclick = () => toggleDate(idx, today);
+    const delBtn = document.createElement('button');
+    delBtn.className = 'delete-btn';
+    delBtn.textContent = 'remove';
+    delBtn.onclick = () => removeHabit(idx);
+    actions.appendChild(checkBtn);
+    actions.appendChild(delBtn);
+    card.appendChild(actions);
+
+    grid.appendChild(card);
+  });
+
+  document.getElementById('statActive').textContent = habits.length;
+  document.getElementById('statStreak').textContent = bestStreak;
+  document.getElementById('statToday').textContent = doneToday;
+}
+
+function escapeHtml(str){
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function toggleDate(idx, ds){
+  const habit = habits[idx];
+  const i = habit.completed.indexOf(ds);
+  if(i >= 0) habit.completed.splice(i,1);
+  else habit.completed.push(ds);
+  save(habits);
+  render();
+}
+
+function removeHabit(idx){
+  habits.splice(idx,1);
+  save(habits);
+  render();
+}
+
+document.getElementById('addBtn').onclick = () => {
+  const input = document.getElementById('habitName');
+  const freq = document.getElementById('freq').value;
+  const name = input.value.trim();
+  if(!name) return;
+  habits.push({ name, freq, completed: [], created: todayStr() });
+  save(habits);
+  input.value = '';
+  render();
+};
+document.getElementById('habitName').addEventListener('keydown', (e) => {
+  if(e.key === 'Enter') document.getElementById('addBtn').click();
+});
+
+render();
+</script>
+</body>
+</html>
